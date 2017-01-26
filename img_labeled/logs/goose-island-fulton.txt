@@ -1,0 +1,3 @@
+id,x_abs,y_abs,x_rel,y_rel,width,height,label
+id,x_abs,y_abs,x_rel,y_rel,width,height,label
+0,1121,548,0.6672619047619047,0.02832626899617492,200,47,Input field
