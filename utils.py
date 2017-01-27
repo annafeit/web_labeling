@@ -84,10 +84,15 @@ def plot_pickled_image(img, label=""):
     """
     takes care of transposing the image such that it can be plotted, and plots it. 
     """ 
-    with sns.axes_style('white'):
-        p = plt.imshow(np.asarray(img.transpose(1,2,0)))
-        if label!="":
-            plt.title(number_label[label])
-    return p
+    fig,ax = plt.subplots(1)
+    sns.set_style('white')
+    ax.imshow(np.asarray(img.transpose(1,2,0)))
+    if label!="":
+        plt.title(number_label[label])
+    return fig,ax
 
+def plot_grey_image(img):
+    sns.set_style('white')
+    fig,ax = plt.subplots(1)
+    ax.imshow(img, cmap = plt.cm.Greys_r)
     
