@@ -26,6 +26,8 @@
 ###################################################################################################
 # Helper class for forking stdout/stderr into a file.
 ###################################################################################################
+from utils import *
+from augment import *
 
 class Tap:
     def __init__(self, stream):
@@ -194,34 +196,34 @@ def prepare_dataset(result_subdir, X_train, y_train, X_test, y_test, num_classes
 
     # Pad according to the amount of jitter we plan to have.
 
-    p = config.augment_translation 
-    if p > 0:
-        X_train = np.pad(X_train, ((0, 0), (0, 0), (p, p), (p, p)), 'reflect')
-        X_test = np.pad(X_test, ((0, 0), (0, 0), (p, p), (p, p)), 'reflect')
+    #p = config.augment_translation 
+    #if p > 0:
+    #    X_train = np.pad(X_train, ((0, 0), (0, 0), (p, p), (p, p)), 'reflect')
+    #    X_test = np.pad(X_test, ((0, 0), (0, 0), (p, p), (p, p)), 'reflect')
 
     # Random shuffle.
 
-    indices = np.arange(len(X_train))
-    np.random.shuffle(indices)
-    X_train = X_train[indices]
-    y_train = y_train[indices]
+    #indices = np.arange(len(X_train))
+    #np.random.shuffle(indices)
+    #X_train = X_train[indices]
+    #y_train = y_train[indices]
 
     # Corrupt some of the labels if needed.
 
-    num_labels = len(y_train) if config.num_labels == 'all' else config.num_labels
-    if config.corruption_percentage > 0:
-        corrupt_labels = int(0.01 * num_labels * config.corruption_percentage)
-        corrupt_labels = min(corrupt_labels, num_labels)
-        print("Corrupting %d labels." % corrupt_labels)
-        for i in range(corrupt_labels):
-            y_train[i] = np.random.randint(0, num_classes)
+    #num_labels = len(y_train) if config.num_labels == 'all' else config.num_labels
+    #if config.corruption_percentage > 0:
+    #    corrupt_labels = int(0.01 * num_labels * config.corruption_percentage)
+    #    corrupt_labels = min(corrupt_labels, num_labels)
+    #    print("Corrupting %d labels." % corrupt_labels)
+    #    for i in range(corrupt_labels):
+    #        y_train[i] = np.random.randint(0, num_classes)
     
     # Reshuffle.
 
-    indices = np.arange(len(X_train))
-    np.random.shuffle(indices)
-    X_train = X_train[indices]
-    y_train = y_train[indices]
+    #indices = np.arange(len(X_train))
+    #np.random.shuffle(indices)
+    #X_train = X_train[indices]
+    #y_train = y_train[indices]
 
     # Construct mask_train. It has a zero where label is unknown, and one where label is known.
 
@@ -249,49 +251,7 @@ def prepare_dataset(result_subdir, X_train, y_train, X_test, y_test, num_classes
         # Dump out some of the labeled digits.
         save_image(os.path.join(result_subdir, 'labeled_inputs.png'), label_image)
 
-    # Draw in auxiliary data from the tiny images dataset.
-
-    if config.aux_tinyimg is not None:
-        print("Augmenting with unlabeled data from tiny images dataset.")
-        with open(os.path.join(config.data_dir, 'tinyimages', 'tiny_index.pkl'), 'rb') as f:
-            tinyimg_index = pickle.load(f)
-
-        if config.aux_tinyimg == 'c100':
-            print("Using all classes common with CIFAR-100.")
-
-            with open(os.path.join(config.data_dir, 'cifar-100', 'meta'), 'rb') as f:
-                cifar_labels = pickle.load(f)['fine_label_names']
-            cifar_to_tinyimg = { 'maple_tree': 'maple', 'aquarium_fish' : 'fish' }
-            cifar_labels = [l if l not in cifar_to_tinyimg else cifar_to_tinyimg[l] for l in cifar_labels]
-
-            load_indices = sum([list(range(*tinyimg_index[label])) for label in cifar_labels], [])
-        else:
-            print("Using %d random images." % config.aux_tinyimg)
-
-            num_all_images = max(e for s, e in tinyimg_index.values())
-            load_indices = np.arange(num_all_images)
-            np.random.shuffle(load_indices)
-            load_indices = load_indices[:config.aux_tinyimg]
-            load_indices.sort() # Some coherence in seeks.
-
-        # Load the images.
-
-        num_aux_images = len(load_indices)
-        print("Loading %d auxiliary unlabeled images." % num_aux_images)
-        Z_train = load_tinyimages(load_indices)
-
-        # Whiten and pad.
-
-        if config.whiten_inputs == 'norm':
-            Z_train = whiten_norm(Z_train)
-        elif config.whiten_inputs == 'zca':
-            Z_train = whitener.apply(Z_train)
-        Z_train = np.pad(Z_train, ((0, 0), (0, 0), (p, p), (p, p)), 'reflect')
-
-        # Concatenate to training data and append zeros to labels and mask.
-        X_train = np.concatenate((X_train, Z_train))
-        y_train = np.concatenate((y_train, np.zeros(num_aux_images, dtype='int32')))
-        mask_train = np.concatenate((mask_train, np.zeros(num_aux_images, dtype='float32')))
+    
 
     # Zero out masked-out labels for maximum paranoia.
     for i in range(len(y_train)):
@@ -550,6 +510,8 @@ def run_training(monitor_filename=None):
         X_train, y_train, X_test, y_test = load_cifar_100()
     elif config.dataset == 'svhn':
         X_train, y_train, X_test, y_test = load_svhn()
+    elif config.dataset == 'web':
+        X_train, y_train, X_test, y_test = load_pickle("data.pkl")
     else:
         print("Unknown dataset '%s'." % config.dataset)
         exit()
