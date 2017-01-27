@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy import ndimage
 import cPickle
 import seaborn as sns
+from sklearn.model_selection import train_test_split
 
 label_numbers =  {"Button":0, "Icon":1, "Image":2, "Input field":3, "Line":4, "Text":5, "Navigation Menu":6}
 number_label = {0:"Button", 1:"Icon", 2:"Image", 3:"Input field", 4:"Line", 5:"Text", 6: "Navigation Menu"}
@@ -77,7 +78,8 @@ def load_pickle(path):
         data = cPickle.load(f)
     images = [i/np.float32(255) for i in data['data']]
     labels = np.asarray(data['labels'], dtype='int32')
-    return images, labels
+    X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2)
+    return X_train, y_train, X_test, y_test
 
 
 def plot_pickled_image(img, label=""):
