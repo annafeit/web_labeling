@@ -61,10 +61,12 @@ from collections import OrderedDict
 run_desc                            = 'baseline'                # Name the results directory to be created for current run.
 network_type                        = 'pi'                      # Valid values: 'pi', 'tempens'.
 dataset                             = 'data_128'                    # Valid values: 'cifar-10', 'svhn'.
+image_size                          = 128                    #image dimension 
 whiten_inputs                       = None                    # EDITED Valid values: None, 'norm', 'zca'.
-augment_noise_stddev                = 0.15                      # Controls the Gaussian noise added inside network during training.
-augment_mirror                      = False                     # Enable horizontal flip augmentation.
-#augment_translation                 = 2                         # Maximum translation distance for augmentation. Must be an integer.
+augment_noise_stddev                = 0                      # Controls the Gaussian noise added inside network during training.
+augment_mirror                      = True                     # Enable horizontal flip augmentation.
+augment_translation                 = 0                         # Maximum translation distance for augmentation. Must be an integer.
+augment_blur                        = True                        #Blur image
 num_labels                          = 'all'                       # EDITED Total number of labeled inputs (1/10th of this per class). Value 'all' uses all labels.
 corruption_percentage               = 0                         # How big percentage of input labels to corrupt.
 num_epochs                          = 300                       # Number of epochs to train.

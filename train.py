@@ -261,7 +261,7 @@ def build_network(input_var, num_input_channels, num_classes):
         'momentum': config.batch_normalization_momentum
     }
 
-    net = InputLayer        (     name='input',    shape=(None, num_input_channels, 32, 32), input_var=input_var)
+    net = InputLayer        (     name='input',    shape=(None, num_input_channels, config.img_size, config.img_size), input_var=input_var)
     net = GaussianNoiseLayer(net, name='noise',    sigma=config.augment_noise_stddev)
     net = WN(Conv2DLayer    (net, name='conv1a',   num_filters=128, pad='same', **conv_defs), **wn_defs)
     net = WN(Conv2DLayer    (net, name='conv1b',   num_filters=128, pad='same', **conv_defs), **wn_defs)
@@ -333,7 +333,7 @@ def iterate_minibatches(inputs, targets, batch_size):
     for start_idx in range(0, num, batch_size):
         if start_idx + batch_size <= num:
             excerpt = indices[start_idx : start_idx + batch_size]
-            yield len(excerpt), inputs[excerpt, :, crop:crop+32, crop:crop+32], targets[excerpt]
+            yield len(excerpt), inputs[excerpt, :, crop:crop+img.shape[1], crop:crop+img.shape[1]], targets[excerpt]
 
 def iterate_minibatches_augment_pi(inputs, labels, mask, batch_size):
     assert len(inputs) == len(labels) == len(mask)
@@ -357,15 +357,18 @@ def iterate_minibatches_augment_pi(inputs, labels, mask, batch_size):
             excerpt = indices[start_idx : start_idx + batch_size]
             noisy_a, noisy_b = [], []
             for img in inputs[excerpt]:
-                if config.augment_mirror and np.random.uniform() > 0.5:
+                r = np.random.uniform()
+                if config.augment_mirror and r > 0.33 and r < 0.66:
                     img = img[:, :, ::-1]
+                elif config.augment_blur and r > 0.66:
+                    img = blur(img)
                 t = config.augment_translation
                 ofs0 = np.random.randint(-t, t + 1) + crop
                 ofs1 = np.random.randint(-t, t + 1) + crop
-                img_a = img[:, ofs0:ofs0+32, ofs1:ofs1+32]
+                img_a = img[:, ofs0:ofs0+img.shape[1], ofs1:ofs1+img.shape[1]]
                 ofs0 = np.random.randint(-t, t + 1) + crop
                 ofs1 = np.random.randint(-t, t + 1) + crop
-                img_b = img[:, ofs0:ofs0+32, ofs1:ofs1+32]
+                img_b = img[:, ofs0:ofs0+img.shape[1], ofs1:ofs1+img.shape[1]]
                 noisy_a.append(img_a)
                 noisy_b.append(img_b)
             yield len(excerpt), excerpt, noisy_a, noisy_b, labels[excerpt], mask[excerpt]
@@ -397,7 +400,7 @@ def iterate_minibatches_augment_tempens(inputs, labels, mask, targets, batch_siz
                 t = config.augment_translation
                 ofs0 = np.random.randint(-t, t + 1) + crop
                 ofs1 = np.random.randint(-t, t + 1) + crop
-                img = img[:, ofs0:ofs0+32, ofs1:ofs1+32]
+                img = img[:, ofs0:ofs0+img.shape[1], ofs1:ofs1+img.shape[1]]
                 noisy.append(img)
             yield len(excerpt), excerpt, noisy, labels[excerpt], mask[excerpt], targets[excerpt]
 
