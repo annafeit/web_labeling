@@ -111,69 +111,6 @@ def save_image(filename, img):
 # Dataset loaders.
 ###################################################################################################
 
-def load_cifar_10():
-    import cPickle
-    def load_cifar_batches(filenames):
-        if isinstance(filenames, str):
-            filenames = [filenames]
-        images = []
-        labels = []
-        for fn in filenames:
-            with open(os.path.join(config.data_dir, 'cifar-10', fn), 'rb') as f:
-                data = cPickle.load(f)
-            images.append(np.asarray(data['data'], dtype='float32').reshape(-1, 3, 32, 32) / np.float32(255))
-            labels.append(np.asarray(data['labels'], dtype='int32'))
-        return np.concatenate(images), np.concatenate(labels)
-
-    X_train, y_train = load_cifar_batches(['data_batch_%d' % i for i in (1, 2, 3, 4, 5)])
-    X_test, y_test = load_cifar_batches('test_batch')
-
-    return X_train, y_train, X_test, y_test
-
-def load_cifar_100():
-    import cPickle
-    def load_cifar_file(fn):
-        with open(os.path.join(config.data_dir, 'cifar-100', fn), 'rb') as f:
-            data = cPickle.load(f)
-        images = np.asarray(data['data'], dtype='float32').reshape(-1, 3, 32, 32) / np.float32(255)
-        labels = np.asarray(data['fine_labels'], dtype='int32')
-        return images, labels
-
-    X_train, y_train = load_cifar_file('train')
-    X_test, y_test = load_cifar_file('test')
-
-    return X_train, y_train, X_test, y_test
-
-def load_svhn():
-    import cPickle
-    def load_svhn_files(filenames):
-        if isinstance(filenames, str):
-            filenames = [filenames]
-        images = []
-        labels = []
-        for fn in filenames:
-            with open(os.path.join(config.data_dir, 'svhn', fn), 'rb') as f:
-                X, y = cPickle.load(f)
-            images.append(np.asarray(X, dtype='float32') / np.float32(255))
-            labels.append(np.asarray(y, dtype='int32'))
-        return np.concatenate(images), np.concatenate(labels)
-
-    X_train, y_train = load_svhn_files(['train_%d.pkl' % i for i in (1, 2, 3)])
-    X_test, y_test = load_svhn_files('test.pkl')
-
-    return X_train, y_train, X_test, y_test
-
-def load_tinyimages(indices, output_array=None, output_start_index=0):
-    images = output_array
-    if images is None:
-        images = np.zeros((len(indices), 3, 32, 32), dtype='float32')
-    assert(images.shape[0] >= len(indices) + output_start_index and images.shape[1:] == (3, 32, 32))
-    with open(os.path.join(config.data_dir, 'tinyimages', 'tiny_images.bin'), 'rb') as f:
-        for i, idx in enumerate(indices):
-            f.seek(3072 * idx)
-            images[output_start_index + i] = np.fromfile(f, dtype='uint8', count=3072).reshape(3, 32, 32).transpose((0, 2, 1)) / np.float32(255)
-    return images
-
 def whiten_norm(x):
     x = x - np.mean(x, axis=(1, 2, 3), keepdims=True)
     x = x / (np.mean(x ** 2, axis=(1, 2, 3), keepdims=True) ** 0.5)
@@ -504,14 +441,8 @@ def run_training(monitor_filename=None):
 
     print("Loading dataset '%s'..." % config.dataset)
 
-    if config.dataset == 'cifar-10':
-        X_train, y_train, X_test, y_test = load_cifar_10()
-    elif config.dataset == 'cifar-100':
-        X_train, y_train, X_test, y_test = load_cifar_100()
-    elif config.dataset == 'svhn':
-        X_train, y_train, X_test, y_test = load_svhn()
-    elif config.dataset == 'web':
-        X_train, y_train, X_test, y_test = load_pickle("data.pkl")
+    if config.dataset[0:4] == 'data':
+        X_train, y_train, X_test, y_test = load_pickle(config.dataset+".pkl")
     else:
         print("Unknown dataset '%s'." % config.dataset)
         exit()

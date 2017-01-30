@@ -60,7 +60,7 @@ from collections import OrderedDict
 
 run_desc                            = 'baseline'                # Name the results directory to be created for current run.
 network_type                        = 'pi'                      # Valid values: 'pi', 'tempens'.
-dataset                             = 'web'                    # Valid values: 'cifar-10', 'svhn'.
+dataset                             = 'data_128'                    # Valid values: 'cifar-10', 'svhn'.
 whiten_inputs                       = None                    # EDITED Valid values: None, 'norm', 'zca'.
 augment_noise_stddev                = 0.15                      # Controls the Gaussian noise added inside network during training.
 augment_mirror                      = False                     # Enable horizontal flip augmentation.

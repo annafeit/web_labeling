@@ -10,8 +10,8 @@ from skimage.measure import block_reduce
 from scipy import misc
 
 
-label_numbers =  {"Button":0, "Icon":1, "Image":2, "Input field":3, "Line":4, "Text":5, "Navigation Menu":6}
-number_label = {0:"Button", 1:"Icon", 2:"Image", 3:"Input field", 4:"Line", 5:"Text", 6: "Navigation Menu"}
+label_numbers =  {"Button":0, "Icon":1, "Image":2, "Input field":3,  "Text":4, "Navigation Menu":5}
+number_label = {0:"Button", 1:"Icon", 2:"Image", 3:"Input field",  4:"Text", 5: "Navigation Menu"}
 
 def read_txts_and_combine(folder="../img_labeled/logs/"):
     """
@@ -36,6 +36,7 @@ def filter_top_100(df):
     counts = df.groupby("label").count()
     labels_100 = list(counts[counts.id>100].index)
     df = df[df.label.isin(labels_100)]
+    df = df[df.label.isin(label_numbers)]
     #convert labels to numbers
     df.loc[:,"label"] = df.label.apply(lambda x:label_numbers[x])
     return df
@@ -69,6 +70,10 @@ def pickle_images(path, df, image_size=""):
                 label = label.iloc[0]
                 if image_size != "":
                     new_image = resize_and_pad(img, image_size)
+                    new_dir = folder+str(image_size)
+                    if not os.path.exists(new_dir):
+                        os.makedirs(new_dir)
+                    misc.toimage(new_image).save(new_dir+"/"+f)
                     all_imgs.append(new_image)
                 else:
                     all_imgs.append(img)                        
@@ -83,7 +88,7 @@ def load_pickle(path):
     """
     with open(path, 'rb') as f:
         data = cPickle.load(f)
-    images = [i/np.float32(255) for i in data['data']]
+    images = np.asarray([i/np.float32(255) for i in data['data']])
     labels = np.asarray(data['labels'], dtype='int32')
     X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2)
     return X_train, y_train, X_test, y_test
@@ -104,19 +109,21 @@ def resize_and_pad(img, target_size):
         factor = max_shape/float(target_size)
         scaled_img  = misc.imresize(img, (max(1,int(img.shape[1]/factor)), max(1,int(img.shape[2]/factor))), interp="nearest")    
 
-    #fill up 
-
-    if max_index == 1:    
-        padded_image = np.stack([np.lib.pad(scaled_img[:,:,0], ((0,0),(0,target_size-scaled_img.shape[1])), 'constant', constant_values=(255)),
-                        np.lib.pad(scaled_img[:,:,1], ((0,0),(0,target_size-scaled_img.shape[1])), 'constant', constant_values=(255)),
-                        np.lib.pad(scaled_img[:,:,2], ((0,0),(0,target_size-scaled_img.shape[1])), 'constant', constant_values=(255))])
-    else:
-        padded_image = np.stack([np.lib.pad(scaled_img[:,:,0], ((0,target_size-scaled_img.shape[0]),(0,0)), 'constant', constant_values=(255)),
-                        np.lib.pad(scaled_img[:,:,1], ((0,target_size-scaled_img.shape[0]),(0,0)), 'constant', constant_values=(255)),
-                        np.lib.pad(scaled_img[:,:,2], ((0,target_size-scaled_img.shape[0]),(0,0)), 'constant', constant_values=(255))])
-
-
-    padded_image = padded_image
+    #fill up   
+    padded_image = np.stack([np.lib.pad(scaled_img[:,:,0], 
+                                        ((0,target_size-scaled_img.shape[0]),
+                                         (0,target_size-scaled_img.shape[1])), 
+                                        'constant', constant_values=(255)),
+                            np.lib.pad(scaled_img[:,:,1], 
+                                       ((0,target_size-scaled_img.shape[0]),
+                                        (0,target_size-scaled_img.shape[1])), 
+                                       'constant', constant_values=(255)),
+                            np.lib.pad(scaled_img[:,:,2], 
+                                       ((0,target_size-scaled_img.shape[0]),
+                                        (0,target_size-scaled_img.shape[1])), 
+                                       'constant', constant_values=(255))])
+  
+    
     return padded_image
 
 def plot_image(img, label=""):
