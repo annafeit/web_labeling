@@ -52,6 +52,13 @@ def read_transposed_image(path):
     return img
 
 
+def read_image(path):
+    """
+    reads the given path into a RGB image; numpy(X,Y,3)
+    """
+    img = ndimage.imread(path, mode="RGB")    
+    return img
+
 def pickle_images(path, df, image_size=""):
     """
     reads all png images stored in the given folder, categorizes them according to the given data frame, and saves a pickled dictionary 
